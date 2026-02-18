@@ -316,3 +316,44 @@ def sma_star(maze, start, goal, memory_limit=10):
                     open_list.pop(0)  # remove worst
 
     print("No Path Found")
+
+
+def ucs(graph, start, goal):
+    priority_queue = [[0, start, [start]]]  # cost, node, path
+    visited = set()
+    nodes_expanded = 0
+
+    while priority_queue:
+        priority_queue.sort(key=lambda x: x[0])
+        cost, current, path = priority_queue.pop(0)
+
+        if current == goal:
+            return path, cost, nodes_expanded
+
+        if current not in visited:
+            visited.add(current)
+            nodes_expanded += 1
+
+            for neighbor, weight in graph[current]:
+                new_cost = cost + weight
+                new_path = path + [neighbor]
+                priority_queue.append([new_cost, neighbor, new_path])
+
+    return None, None, nodes_expanded
+
+
+graph = {
+    'A': [('B',10), ('C',25)],
+    'B': [('D',40), ('E',5)],
+    'C': [('F',15)],
+    'D': [('G',30)],
+    'E': [('G',60)],
+    'F': [('G',5)],
+    'G': []
+}
+
+path, cost, expanded = ucs(graph, 'A', 'G')
+
+print("Optimal Path:", path)
+print("Total Cost:", cost)
+print("Nodes Expanded:", expanded)

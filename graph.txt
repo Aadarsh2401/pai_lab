@@ -21,3 +21,169 @@ def input_graph():
 
 graph = input_graph()
 print("Graph:",graph)
+
+
+#bfs search
+
+from collections import deque
+
+def bfs(graph, start, goal):
+    queue = deque()
+    queue.append([start])  # store path, not just node
+
+    visited = set()
+    nodes_expanded = 0
+
+    while queue:
+        path = queue.popleft()
+        current = path[-1]
+
+        if current == goal:
+            return path, nodes_expanded
+
+        if current not in visited:
+            visited.add(current)
+            nodes_expanded += 1
+
+            for neighbor in graph[current]:
+                new_path = list(path)
+                new_path.append(neighbor)
+                queue.append(new_path)
+
+    return None, nodes_expanded
+
+
+#dfs search 
+
+def dfs(graph, current, goal, visited=None, nodes_expanded=0):
+    if visited is None:
+        visited = set()
+
+    visited.add(current)
+    nodes_expanded += 1
+
+    if current == goal:
+        return [current], nodes_expanded
+
+    for neighbor in graph[current]:
+        if neighbor not in visited:
+            path, nodes_expanded = dfs(graph, neighbor, goal, visited, nodes_expanded)
+            if path:
+                return [current] + path, nodes_expanded
+
+    return None, nodes_expanded
+
+
+path, expanded = dfs(maze, start, goal)
+
+print("Path found:", path)
+print("Nodes expanded:", expanded)
+
+
+#8 puzzle using bfs
+
+from collections import deque
+
+def get_neighbors(state):
+    neighbors = []
+    index = state.index(0)
+
+    moves = {
+        "UP": -3,
+        "DOWN": 3,
+        "LEFT": -1,
+        "RIGHT": 1
+    }
+
+    for move in moves:
+        new_index = index + moves[move]
+
+        if move == "UP" and index < 3:
+            continue
+        if move == "DOWN" and index > 5:
+            continue
+        if move == "LEFT" and index % 3 == 0:
+            continue
+        if move == "RIGHT" and index % 3 == 2:
+            continue
+
+        new_state = list(state)
+        new_state[index], new_state[new_index] = new_state[new_index], new_state[index]
+        neighbors.append(tuple(new_state))
+
+    return neighbors
+
+
+def bfs_puzzle(start, goal):
+    queue = deque([[start]])
+    visited = set()
+    nodes_expanded = 0
+
+    while queue:
+        path = queue.popleft()
+        state = path[-1]
+
+        if state == goal:
+            return path, nodes_expanded
+
+        if state not in visited:
+            visited.add(state)
+            nodes_expanded += 1
+
+            for neighbor in get_neighbors(state):
+                new_path = list(path)
+                new_path.append(neighbor)
+                queue.append(new_path)
+
+    return None, nodes_expanded
+
+
+start_state = (1,2,3,4,5,6,7,0,8)
+goal_state = (1,2,3,4,5,6,7,8,0)
+
+path, expanded = bfs_puzzle(start_state, goal_state)
+
+print("Steps:", len(path)-1)
+print("States expanded:", expanded)
+
+#uniform cost search
+
+def ucs(graph, start, goal):
+    priority_queue = [[0, start, [start]]]  # cost, node, path
+    visited = set()
+    nodes_expanded = 0
+
+    while priority_queue:
+        priority_queue.sort(key=lambda x: x[0])
+        cost, current, path = priority_queue.pop(0)
+
+        if current == goal:
+            return path, cost, nodes_expanded
+
+        if current not in visited:
+            visited.add(current)
+            nodes_expanded += 1
+
+            for neighbor, weight in graph[current]:
+                new_cost = cost + weight
+                new_path = path + [neighbor]
+                priority_queue.append([new_cost, neighbor, new_path])
+
+    return None, None, nodes_expanded
+
+
+graph = {
+    'A': [('B',10), ('C',25)],
+    'B': [('D',40), ('E',5)],
+    'C': [('F',15)],
+    'D': [('G',30)],
+    'E': [('G',60)],
+    'F': [('G',5)],
+    'G': []
+}
+
+path, cost, expanded = ucs(graph, 'A', 'G')
+
+print("Optimal Path:", path)
+print("Total Cost:", cost)
+print("Nodes Expanded:", expanded)

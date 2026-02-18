@@ -183,3 +183,136 @@ def get_neighbors(node, maze):
 
     print("A* Path:", path)
     print("Nodes Expanded:", nodes_expanded)
+
+
+#rbfs
+def rbfs(maze, current, goal, g, f_limit, path, nodes_expanded):
+    nodes_expanded[0] += 1
+
+    if current == goal:
+        return path, 0
+
+    successors = []
+    for neighbor in get_neighbors(current, maze):
+        if neighbor not in path:
+            new_g = g + 1
+            f = new_g + heuristic(neighbor, goal)
+            successors.append((f, neighbor, new_g))
+
+    if not successors:
+        return None, math.inf
+
+    while True:
+        successors.sort(key=lambda x: x[0])
+        best_f, best_node, best_g = successors[0]
+
+        if best_f > f_limit:
+            return None, best_f
+
+        alternative = successors[1][0] if len(successors) > 1 else math.inf
+
+        result, best_new_f = rbfs(
+            maze,
+            best_node,
+            goal,
+            best_g,
+            min(f_limit, alternative),
+            path + [best_node],
+            nodes_expanded
+        )
+
+        successors[0] = (best_new_f, best_node, best_g)
+
+        if result is not None:
+            return result, best_new_f
+
+
+def run_rbfs(maze, start, goal):
+    nodes_expanded = [0]
+    path, _ = rbfs(maze, start, goal, 0,
+                   heuristic(start, goal),
+                   [start],
+                   nodes_expanded)
+
+    print("RBFS Path:", path)
+    print("Nodes Expanded:", nodes_expanded[0])
+
+
+#ida*
+
+def ida_star_search(maze, start, goal):
+
+    threshold = heuristic(start, goal)
+    nodes_expanded = 0
+
+    def dfs(node, g, threshold, path):
+        nonlocal nodes_expanded
+        nodes_expanded += 1
+
+        f = g + heuristic(node, goal)
+        if f > threshold:
+            return f
+
+        if node == goal:
+            return path
+
+        min_threshold = math.inf
+
+        for neighbor in get_neighbors(node, maze):
+            if neighbor not in path:
+                result = dfs(neighbor, g+1, threshold, path + [neighbor])
+
+                if isinstance(result, list):
+                    return result
+
+                min_threshold = min(min_threshold, result)
+
+        return min_threshold
+
+    while True:
+        result = dfs(start, 0, threshold, [start])
+
+        if isinstance(result, list):
+            print("IDA* Path:", result)
+            print("Nodes Expanded:", nodes_expanded)
+            return
+
+        if result == math.inf:
+            print("No Path Found")
+            return
+
+        threshold = result
+
+
+#sma*
+import heapq
+
+def sma_star(maze, start, goal, memory_limit=10):
+
+    open_list = []
+    heapq.heappush(open_list, (heuristic(start, goal), 0, start, [start]))
+
+    nodes_expanded = 0
+
+    while open_list:
+        f, g, current, path = heapq.heappop(open_list)
+        nodes_expanded += 1
+
+        if current == goal:
+            print("SMA* Path:", path)
+            print("Nodes Expanded:", nodes_expanded)
+            return
+
+        for neighbor in get_neighbors(current, maze):
+            if neighbor not in path:
+                new_g = g + 1
+                new_f = new_g + heuristic(neighbor, goal)
+
+                heapq.heappush(open_list, (new_f, new_g, neighbor, path + [neighbor]))
+
+                # Memory control
+                if len(open_list) > memory_limit:
+                    open_list.sort(reverse=True)  # worst f at front
+                    open_list.pop(0)  # remove worst
+
+    print("No Path Found")

@@ -1,3 +1,4 @@
+#input
 def input_graph():
     graph={}
     

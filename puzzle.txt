@@ -66,44 +66,98 @@ path, expanded = bfs_puzzle(start_state, goal_state)
 print("Steps:", len(path)-1)
 print("States expanded:", expanded)
 
-#uniform cost search
+import sys
 
-def ucs(graph, start, goal):
-    priority_queue = [[0, start, [start]]]  # cost, node, path
-    visited = set()
-    nodes_expanded = 0
+# Manhattan Distance
+def heuristic(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-    while priority_queue:
-        priority_queue.sort(key=lambda x: x[0])
-        cost, current, path = priority_queue.pop(0)
+# RBFS Algorithm
+def rbfs(node, goal, maze, g, f_limit, visited, expanded):
+    expanded[0] += 1
+    
+    if node == goal:
+        return [node], g
+    
+    moves = [(0,1),(1,0),(0,-1),(-1,0)]
+    successors = []
+    
+    for move in moves:
+        new = (node[0] + move[0], node[1] + move[1])
+        
+        if 0 <= new[0] < len(maze) and 0 <= new[1] < len(maze[0]):
+            if maze[new[0]][new[1]] == 0 and new not in visited:
+                new_g = g + 1
+                new_f = new_g + heuristic(new, goal)
+                successors.append((new, new_g, new_f))
+    
+    if not successors:
+        return None, sys.maxsize
+    
+    while True:
+        successors.sort(key=lambda x: x[2])
+        best = successors[0]
+        
+        if best[2] > f_limit:
+            return None, best[2]
+        
+        alternative = successors[1][2] if len(successors) > 1 else sys.maxsize
+        
+        visited.add(best[0])
+        result, best_f = rbfs(best[0], goal, maze, best[1], 
+                              min(f_limit, alternative), visited, expanded)
+        
+        successors[0] = (best[0], best[1], best_f)
+        
+        if result:
+            return [node] + result, best_f
 
-        if current == goal:
-            return path, cost, nodes_expanded
+maze = [
+    [0,0,0,0],
+    [1,1,0,1],
+    [0,0,0,0],
+    [0,1,1,0]
+]
 
-        if current not in visited:
-            visited.add(current)
-            nodes_expanded += 1
+start = (0,0)
+goal = (3,3)
 
-            for neighbor, weight in graph[current]:
-                new_cost = cost + weight
-                new_path = path + [neighbor]
-                priority_queue.append([new_cost, neighbor, new_path])
+expanded = [0]
+visited = set([start])
 
-    return None, None, nodes_expanded
+path, _ = rbfs(start, goal, maze, 0, sys.maxsize, visited, expanded)
+
+print("Path:", path)
+print("Nodes Expanded:", expanded[0])
+
+def manhattan(state, goal):
+    distance = 0
+    for i in range(3):
+        for j in range(3):
+            val = state[i][j]
+            if val != 0:
+                for x in range(3):
+                    for y in range(3):
+                        if goal[x][y] == val:
+                            distance += abs(x - i) + abs(y - j)
+    return distance
 
 
-graph = {
-    'A': [('B',10), ('C',25)],
-    'B': [('D',40), ('E',5)],
-    'C': [('F',15)],
-    'D': [('G',30)],
-    'E': [('G',60)],
-    'F': [('G',5)],
-    'G': []
-}
-
-path, cost, expanded = ucs(graph, 'A', 'G')
-
-print("Optimal Path:", path)
-print("Total Cost:", cost)
-print("Nodes Expanded:", expanded)
+def get_neighbors(state):
+    neighbors = []
+    
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == 0:
+                x, y = i, j
+    
+    moves = [(0,1),(1,0),(0,-1),(-1,0)]
+    
+    for move in moves:
+        nx, ny = x + move[0], y + move[1]
+        if 0 <= nx < 3 and 0 <= ny < 3:
+            new_state = [row[:] for row in state]
+            new_state[x][y], new_state[nx][ny] = new_state[nx][ny], new_state[x][y]
+            neighbors.append(new_state)
+    
+    return neighbors
